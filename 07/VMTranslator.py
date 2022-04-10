@@ -14,6 +14,8 @@ def main():
 
 class VMTranslator:
     def __init__(self):
+        self.label_counter = 0
+
         self._push = [
             "@SP",
             "A=M",
@@ -35,15 +37,31 @@ class VMTranslator:
 
             ],
             'neg': [
-
-            ].append(),
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "M=-M",
+            ],
             'eq': [
-
+                "@SP",
+                "M=M-1";
+                "A=M",
+                "D=M",
+                "A=A-1",
+                "D=D+M",
+                f"@IF_{self.label_counter}",
+                "D;JEQ",
+                f"@END_IF_{self.label_counter}",
+                "0;JMP",
+                f"(IF_{self.label_counter})",
+                "M=",
+                f"(END_IF_{self.label_counter})"
             ],
             'gt': [],
             'lt': [],
             'and': [],
             'or': [],
+            'not':[]
         }
 
         self.memory_segments = {
