@@ -23,45 +23,119 @@ class VMTranslator:
             "@SP",
             "M=M+1"
         ]
+        add = [
+            "@SP",
+            "M=M-1",
+            "A=M",
+            "D=M",
+            "A=A-1",
+            "M=D+M"
+        ]
+        neg = [
+            "@SP",
+            "M=M-1",
+            "A=M-1",
+            "M=-M",
+        ]
 
-        self.arithmetic_logic = {
-            'add': [
-                "@SP",
-                "M=M-1",
-                "A=M",
-                "D=M",
-                "A=A-1",
-                "M=D+M"
-            ],
+        self.arithmetic_logic = lambda: {
+            'add': add,
             'sub': [
-
+                *neg,
+                *add
             ],
-            'neg': [
-                "@SP",
-                "M=M-1",
-                "A=M",
-                "M=-M",
-            ],
+            'neg': neg,
             'eq': [
                 "@SP",
-                "M=M-1";
+                "M=M-1",
                 "A=M",
                 "D=M",
                 "A=A-1",
-                "D=D+M",
+                "D=D-M",
                 f"@IF_{self.label_counter}",
                 "D;JEQ",
-                f"@END_IF_{self.label_counter}",
+                f"@ELSE_{self.label_counter}",
                 "0;JMP",
                 f"(IF_{self.label_counter})",
-                "M=",
-                f"(END_IF_{self.label_counter})"
+                "@SP",
+                "A=M-1",
+                "M=-1",
+                f"@END_IF_{self.label_counter}",
+                "0;JMP",
+                f"(ELSE_{self.label_counter})",
+                "@SP",
+                "A=M-1",
+                "M=0",
+                f"(END_IF_{self.label_counter})",
             ],
-            'gt': [],
-            'lt': [],
-            'and': [],
-            'or': [],
-            'not':[]
+            'gt': [
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "D=M",
+                "A=A-1",
+                "D=D-M",
+                f"@IF_{self.label_counter}",
+                "D;JLT",
+                f"@ELSE_{self.label_counter}",
+                "0;JMP",
+                f"(IF_{self.label_counter})",
+                "@SP",
+                "A=M-1",
+                "M=-1",
+                f"@END_IF_{self.label_counter}",
+                "0;JMP",
+                f"(ELSE_{self.label_counter})",
+                "@SP",
+                "A=M-1",
+                "M=0",
+                f"(END_IF_{self.label_counter})",
+            ],
+            'lt': [
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "D=M",
+                "A=A-1",
+                "D=D-M",
+                f"@IF_{self.label_counter}",
+                "D;JGT",
+                f"@ELSE_{self.label_counter}",
+                "0;JMP",
+                f"(IF_{self.label_counter})",
+                "@SP",
+                "A=M-1",
+                "M=-1",
+                f"@END_IF_{self.label_counter}",
+                "0;JMP",
+                f"(ELSE_{self.label_counter})",
+                "@SP",
+                "A=M-1",
+                "M=0",
+                f"(END_IF_{self.label_counter})",
+            ],
+            'and': [
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "D=M",
+                "A=A-1",
+                "M=D&M"
+            ],
+            'or': [
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "D=M",
+                "A=A-1",
+                "M=D|M"
+            ],
+            'not': [
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "M=!M",
+            ]
         }
 
         self.memory_segments = {
@@ -75,8 +149,9 @@ class VMTranslator:
 
             command = line.split()
             if len(command) == 1:
+                self.label_counter += 1
                 asm_code.extend(
-                    self.arithmetic_logic[command[0]]
+                    self.arithmetic_logic()[command[0]]
                 )
             elif len(command) == 3:
                 if command[0] == 'pop':
