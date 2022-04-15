@@ -17,12 +17,25 @@ class VMTranslator:
         self.label_counter = 0
 
         self._push = [
+            "@R13",
+            "A=M",
+            "D=M",
             "@SP",
             "A=M",
             "M=D",
             "@SP",
             "M=M+1"
         ]
+
+        self._pop = [
+            "@SP",
+            "AM=M-1",
+            "D=M",
+            "@R13",
+            "A=M",
+            "M=D"
+        ]
+        
         add = [
             "@SP",
             "M=M-1",
@@ -34,8 +47,10 @@ class VMTranslator:
         neg = [
             "@SP",
             "M=M-1",
-            "A=M-1",
+            "A=M",
             "M=-M",
+            "@SP",
+            "M=M+1"
         ]
 
         self.arithmetic_logic = lambda: {
@@ -135,11 +150,20 @@ class VMTranslator:
                 "M=M-1",
                 "A=M",
                 "M=!M",
+                "@SP",
+                "M=M+1"
             ]
         }
 
-        self.memory_segments = {
-            'constant': self._constant
+        self.get_from_memory_segment = {
+            'constant': self._constant,
+            #'static': self._retrieve_from_segment,
+            'local': self._retrieve_from_segment('LCL'),
+            'argument': self._retrieve_from_segment('ARG'),
+            'this': self._retrieve_from_segment('THIS'),
+            'that': self._retrieve_from_segment('THAT'),
+            'temp': self._retrieve_temp_variable,
+            'pointer': self._retrieve_pointer
         }
 
     def translate_vm_code(self, code_lines):
@@ -154,26 +178,84 @@ class VMTranslator:
                     self.arithmetic_logic()[command[0]]
                 )
             elif len(command) == 3:
+                
+                asm_code.extend(
+                    self.get_from_memory_segment[command[1]](command[2])
+                )            
+                
                 if command[0] == 'pop':
+                    
                     asm_code.extend(
-                        []
+                        self._pop
                     )
 
-                asm_code.extend(
-                    self.memory_segments[command[1]](command[2])
-                )
                 if command[0] == 'push':
                     asm_code.extend(
                         self._push
                     )
 
         return asm_code
+    
+    def _retrieve_temp_variable(self, index):
+        temp_index = 5 + int(index)
+        return [
+            f"@{temp_index}",
+            "D=A",
+            "@R13",
+            "M=D"
+        ]
+
+    def _retrieve_from_segment(self, segment):
+    
+        def retrieve(index):
+            return [
+                f"@{segment}",
+                "D=M",
+                f"@{index}",
+                "D=D+A",
+                "@R13",
+                "M=D"
+            ]
+        return retrieve
+    
+    def _retrieve_pointer(self, index):
+        address = None
+        if index == "0":
+            address = "THIS"
+        elif index == "1":
+            address = "THAT"
+        
+        return [
+            f"@{address}",
+            "D=A",
+            "@R14",
+            "M=D",
+            "D=A",
+            "@R13",
+            "M=D"
+        ]
+
+    def _pop_memory_segment(self, segment, index):
+        return [
+            f"@{segment}",
+            "D=M",
+            f"@{index}",
+            "D=D+A",
+            "@R13",
+            "A=M",
+            "M=D",
+        ]
 
     @staticmethod
     def _constant(ind):
         asm_code = [
             f"@{ind}",
-            f"D=A"
+            "D=A",
+            "@R14",
+            "M=D",
+            "D=A",
+            "@R13",
+            "M=D"
         ]
         return asm_code
 
