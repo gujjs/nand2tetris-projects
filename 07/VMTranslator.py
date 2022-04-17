@@ -3,7 +3,9 @@ import sys
 
 def main():
     io = IO(sys.argv[1])
-    translator = VMTranslator()
+
+    file_name = sys.argv[1].rsplit('/', 1)[-1].rsplit('.', 1)[0]
+    translator = VMTranslator(file_name)
 
     file_contents = io.import_file()
     asm_code = translator.translate_vm_code(file_contents)
@@ -13,7 +15,9 @@ def main():
 
 
 class VMTranslator:
-    def __init__(self):
+    def __init__(self, file_name):
+        self.file_name = file_name
+        
         self.label_counter = 0
 
         self._push = [
@@ -157,7 +161,7 @@ class VMTranslator:
 
         self.get_from_memory_segment = {
             'constant': self._constant,
-            #'static': self._retrieve_from_segment,
+            'static': self._retrieve_static,
             'local': self._retrieve_from_segment('LCL'),
             'argument': self._retrieve_from_segment('ARG'),
             'this': self._retrieve_from_segment('THIS'),
@@ -196,6 +200,14 @@ class VMTranslator:
 
         return asm_code
     
+    def _retrieve_static(self, index):
+        return [
+            f"@{self.file_name}.{index}",
+            "D=A",
+            "@R13",
+            "M=D"
+        ]
+
     def _retrieve_temp_variable(self, index):
         temp_index = 5 + int(index)
         return [
@@ -227,9 +239,6 @@ class VMTranslator:
         
         return [
             f"@{address}",
-            "D=A",
-            "@R14",
-            "M=D",
             "D=A",
             "@R13",
             "M=D"
