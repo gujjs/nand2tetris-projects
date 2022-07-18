@@ -1,0 +1,72 @@
+class Main {
+    function void main() {
+    
+        var int x_coordinate;
+        var int y_coordinate;
+        var int radius;
+        var int angle;
+
+        var int i;
+        
+        let x_coordinate = 100;
+        let y_coordinate = 100;
+        let radius = 80;
+        let angle = radius / 3;
+        
+        do Screen.drawCircle(
+            x_coordinate, 
+            y_coordinate, 
+            radius
+        );
+        
+        let i = 0;
+        while (i < angle) {
+
+            do Sys.wait(1000/24);
+            
+            do Screen.setColor(false);
+            do Screen.drawLine(
+                x_coordinate,
+                y_coordinate,
+                x_coordinate + radius,
+                y_coordinate + i
+            );
+            
+            do Screen.drawLine(
+                x_coordinate,
+                y_coordinate,
+                x_coordinate + radius,
+                y_coordinate - i
+            );
+            
+            let i = i + 1; 
+        } 
+        
+        let i = angle;
+        while (i > -1) {
+
+            do Sys.wait(1000/24);
+            
+            do Screen.setColor(true);
+            do Screen.drawLine(
+                x_coordinate,
+                y_coordinate,
+                x_coordinate + radius,
+                y_coordinate + i
+            );
+            
+            do Screen.drawLine(
+                x_coordinate,
+                y_coordinate,
+                x_coordinate + radius,
+                y_coordinate - i
+            );
+            
+            let i = i - 1; 
+        }
+        
+        
+        return;
+
+    }
+}
