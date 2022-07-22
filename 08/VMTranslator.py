@@ -6,21 +6,24 @@ import glob
 def main():
     io = IO(sys.argv[1])
 
-    file_name = sys.argv[1].rsplit('/', 1)[-1].rsplit('.', 1)[0]
-    translator = VMTranslator(file_name)
+    files = io.import_file()
 
-    file_contents = io.import_file()
-    asm_code = translator.translate_vm_code(file_contents)
+    translator = VMTranslator('')
+    assembly_file = {
+        file_path.rsplit('/', 1)[-1].rsplit('.', 1)[0]: code
+        for file_path, code in files.items()}
 
-    n = 0
-    for x in asm_code:
-        if x[:2] != '//' and x[0] != '(':
-            print(n, x)
-            n += 1
-        else:
-            print(x)
+    assembly_file = translator.translate_vm_code(assembly_file)
 
-    io.write_file(asm_code)
+    # n = 0
+    # for x in assembly_file:
+    #     if x[:2] != '//' and x[0] != '(':
+    #         print(n, x)
+    #         n += 1
+    #     else:
+    #         print(x)
+
+    io.write_file(assembly_file)
 
 
 class VMTranslator:
@@ -207,14 +210,18 @@ class VMTranslator:
             'call': self._call_function
         }
 
-    def translate_vm_code(self, code_lines):
-        asm_code = [
-            "@256",
-            "D=A",
-            "@SP",
-            "M=D",
-        ]
-        asm_code.extend(self._call_function('Sys.init', 0))
+    def translate_vm_code(self, file_obj):
+        asm_code = self.provide_bootstrap_code()
+
+        for name, code in file_obj.items():
+            self.file_name = name
+            asm_code.extend(
+                self.translate_file(code)
+            )
+        return asm_code
+
+    def translate_file(self, code_lines):
+        asm_code = []
 
         for line in code_lines:
             asm_code.append(f"// {line}")
@@ -265,14 +272,11 @@ class VMTranslator:
 
         return [
             f"@{function_name}.{self.call_counter[function_name]}",
-            "D=A",
-            "@SP",
-            "A=M",
-            "M=D",
-            "@LCL", "D=M", "@SP", "AM=M+1", "M=D",
-            "@ARG", "D=M", "@SP", "AM=M+1", "M=D",
-            "@THIS", "D=M", "@SP", "AM=M+1", "M=D",
-            "@THAT", "D=M", "@SP", "AM=M+1", "M=D",
+            "D=A", "@SP", "A=M", "M=D",                 # store return address
+            "@LCL", "D=M", "@SP", "AM=M+1", "M=D",      # store local address
+            "@ARG", "D=M", "@SP", "AM=M+1", "M=D",      # store arg address
+            "@THIS", "D=M", "@SP", "AM=M+1", "M=D",     # store this
+            "@THAT", "D=M", "@SP", "AM=M+1", "M=D",     # store that
             "@SP",
             "MD=M+1",
             "@LCL",
@@ -292,6 +296,8 @@ class VMTranslator:
             f"@{local_var_n}",
             "D=A",
             f"({function_name}_INIT_LOCAL_VARS_LOOP)",
+            f"@{function_name}_INIT_LOCAL_VARS_LOOP_END",
+            "D;JEQ",
             "@SP",
             "A=M",
             "M=0",
@@ -299,30 +305,40 @@ class VMTranslator:
             "@SP",
             "M=M+1",
             f"@{function_name}_INIT_LOCAL_VARS_LOOP",
-            "D;JGT",
+            "0;JMP",
+            f"({function_name}_INIT_LOCAL_VARS_LOOP_END)"
         ]
 
     def _return_function(self):
         return [
-            "@SP",
-            "A=M-1",
-            "D=M",
-            "@ARG",
-            "A=M",
-            "M=D",
-            "D=A",
-            "@SP",
-            "M=D+1",
+            "@LCL", "D=M", "@5", "A=D-A", "D=M",            # store return
+            "@R15", "M=D",                                  # address
+
+            "@SP", "A=M-1", "D=M", "@ARG", "A=M", "M=D",    # store return
+                                                            # value
+
+            "@ARG", "D=M", "@SP", "M=D+1",                  # restore SP
+
             "@LCL", "AM=M-1", "D=M", "@THAT", "M=D",    # restore THAT
             "@LCL", "AM=M-1", "D=M", "@THIS", "M=D",    # restore THIS
             "@LCL", "AM=M-1", "D=M", "@ARG", "M=D",     # restore ARG
-            "@LCL", "A=M-1", "A=A-1", "D=M", "@SP", "A=M", "M=D",   # store return adress
             "@LCL", "A=M-1", "D=M", "@LCL", "M=D",      # restore LCL
-            "@SP",
-            "A=M",
+
+            "@R15",
             "A=M",
             "0;JMP"
         ]
+
+    def provide_bootstrap_code(self):
+        set_sp_256 = [
+            "@256",
+            "D=A",
+            "@SP",
+            "M=D"
+        ]
+        set_sp_256.extend(self._call_function('Sys.init', 0))
+
+        return set_sp_256
 
     def _retrieve_static(self, index):
         return [
@@ -401,14 +417,16 @@ class IO:
         self.target_file_extension = 'asm'
 
     def import_file(self):
-        file_contents = None
+        file_obj = None
 
         if os.path.isdir(self.file_name):
-            file_contents = self.read_repo()
+            file_obj = self.read_repo()
         elif os.path.isfile(self.file_name):
-            file_contents = self.read_file(self.file_name)
+            file_obj = {self.file_name: self.read_file(self.file_name)}
 
-        return self.parse_file(file_contents)
+        return {key: self.parse_file(value)
+                for key, value in file_obj.items()}
+        # return self.parse_file(file_obj)
 
     def read_file(self, file_name):
         with open(file_name, 'r') as f:
@@ -417,12 +435,12 @@ class IO:
         return file_contents
 
     def read_repo(self):
-        file_contents = []
+        file_contents = {}
 
         for file in glob.glob(
                 f"{self.file_name}/*.{self.source_file_extension}"):
-            print(file)
-            file_contents.extend(self.read_file(file))
+            # print(file)
+            file_contents[file] = self.read_file(file)
 
         return file_contents
 
@@ -453,7 +471,7 @@ class IO:
         with open(target_file_path, 'w') as f:
             for item in file_contents:
                 f.write("%s\n" % item)
-        print(target_file_path)
+        # print(target_file_path)
 
 
 if __name__ == '__main__':
