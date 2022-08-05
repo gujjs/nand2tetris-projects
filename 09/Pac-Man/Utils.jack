@@ -1,0 +1,31 @@
+class Utils {
+    function int square(int a) {
+        var int power;
+        let power = Utils.pwr(a, 2);
+
+//        do Output.println();
+//        do Output.printInt(a);
+//        do Output.println();
+//        do Output.printInt(power);
+//        do Output.println();
+
+        return power;
+    }
+
+    function int pwr(int a, int k) {
+        var int result;
+        let result = 1;
+        
+        if (k < 0) {
+            return 0;
+        }
+
+        while (k > 0) {
+            let result = result * a;
+
+            let k = k - 1;
+        }
+
+        return result;
+    }
+}

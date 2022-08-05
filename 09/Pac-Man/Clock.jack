@@ -1,0 +1,24 @@
+class Clock {
+    field int count;
+    
+    constructor Clock new(){
+
+        let count = 0;
+
+        return this;
+    }
+
+    method void tick(){
+        let count = count + 1;
+
+        return;
+    }
+
+    method boolean period(int k){
+        if (k * (count / k) = count){
+            return true;
+        } else {
+            return false;
+        }
+    }
+}

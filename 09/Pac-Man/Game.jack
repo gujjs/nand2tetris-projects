@@ -1,0 +1,42 @@
+class Game {
+    field PacManPlayer player;
+    
+    field Clock clock;
+    field boolean status;
+
+    constructor Game new() {
+        let player = PacManPlayer.new();
+        
+        let clock = Clock.new();
+        let status = true;
+
+        return this;
+    }
+    
+    method void status_update(char keyboard_key){
+        do clock.tick();
+
+        if (clock.period(42)) {
+            do player.mouth_circle();
+        }
+
+        if (keyboard_key = 130) {    
+            do Output.printChar(45);
+        
+        } 
+
+        if (keyboard_key = 131) {
+            do Output.printChar(43);
+        
+        }
+        
+        if (keyboard_key = 132) {
+            
+        }
+        
+        if (keyboard_key = 133) {
+            do player.move_down();
+        }
+        return;
+    }
+}

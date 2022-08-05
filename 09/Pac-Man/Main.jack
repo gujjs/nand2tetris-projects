@@ -1,81 +1,14 @@
 class Main {
     function void main() {
-    
-        var int x_center;
-        var int y_center;
-        var int radius;
-        var int angle;
-        
-        var int discriminant;
-        var int x_circle;
-        var int direction;
-        
-        var int i;
-        
-        let x_center = 110;
-        let y_center = 110;
-        let radius = 100;
-        let angle = radius / 3;
-        
-        let direction = 1;
-        
-        do Screen.drawCircle(
-            x_center, 
-            y_center, 
-            radius
-        );
-        
-        let i = 0;
-        while (i < angle) {
 
-            do Sys.wait(1000/24);
-          
-            do Screen.setColor(false);
-            do Screen.drawLine(
-                x_center,
-                y_center,
-                x_center + radius,
-                y_center + i
-            );
-            
-            do Screen.drawLine(
-                x_center,
-                y_center,
-                x_center + radius,
-                y_center - i
-            );
-            
-            let i = i + 1; 
-        } 
+        var Game game;
+
+        let game = Game.new();
         
-        let i = angle;
-        while (i > -1) {
-
-            do Sys.wait(1000/24);
-
-            let discriminant = (2 * x_center) * (2 * x_center) + (4 * ((radius * radius) - (i * i) - (x_center * x_center)));
-            let x_circle = ((2 * x_center) + Math.sqrt(discriminant)) / 2 ;
-            
-            do Screen.setColor(true);
-            do Screen.drawLine(
-                x_center,
-                y_center,
-                x_circle,
-                y_center + i
-            );
-            
-            do Screen.drawLine(
-                x_center,
-                y_center,
-                x_circle,
-                y_center - i
-            );
-            
-            let i = i - 1; 
+        while (true) {
+            do game.status_update(Keyboard.keyPressed());
         }
-        
-        
-        return;
 
+        return;
     }
 }

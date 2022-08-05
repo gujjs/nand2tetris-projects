@@ -1,0 +1,110 @@
+class PacManPlayer {
+    field int x_center;
+    field int y_center;
+    field int radius;
+    field int angle;
+
+    field boolean movement;
+    field int movement_speed;
+    
+
+    constructor PacManPlayer new() {
+        let x_center = 460;
+        let y_center = 210;
+        let radius = 40;
+        let angle = radius / 3;
+ 
+
+        let movement = true;
+        let movement_speed = 5;
+
+        return this;
+    }
+    
+    method void move_down(){
+        let y_center = y_center - movement_speed;
+
+        return;
+    }
+
+    method void mouth_animate() {
+        while (movement) {
+            do mouth_circle();
+        }
+
+        return;
+    }
+    
+    method void mouth_circle() {
+        var int discriminant;
+        var int x_circle;
+        var int direction;
+        
+        var int i; 
+       
+        do Output.printInt(y_center);
+        do Output.println();
+
+       let direction = 1;
+        
+        do Screen.drawCircle(
+            x_center, 
+            y_center, 
+            radius
+        );
+        
+        let i = 0;
+        while (i < angle) {
+
+            do Sys.wait(1000/24);
+          
+            do Screen.setColor(false);
+            do Screen.drawLine(
+                x_center,
+                y_center,
+                x_center + radius,
+                y_center + i
+            );
+            
+            do Screen.drawLine(
+                x_center,
+                y_center,
+                x_center + radius,
+                y_center - i
+            );
+            
+            let i = i + 1; 
+        } 
+        
+        let i = angle;
+        while (i > -1) {
+            
+            do Sys.wait(1000/24);
+            
+            let discriminant = Utils.square(-2 * x_center) - (4 * (Utils.square(i) + Utils.square(x_center) - Utils.square(radius)));
+
+            let x_circle = ((2 * x_center) + Math.sqrt(discriminant)) / 2 ;
+            
+            do Screen.setColor(true);
+            do Screen.drawLine(
+                x_center,
+                y_center,
+                x_circle,
+                y_center + i
+            );
+            
+            do Screen.drawLine(
+                x_center,
+                y_center,
+                x_circle,
+                y_center - i
+            );
+            
+            let i = i - 1; 
+        }
+        
+        
+        return;
+
+    }
+}
